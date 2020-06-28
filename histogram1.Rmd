@@ -1,0 +1,111 @@
+---
+output:
+  html_document: default
+  word_document: default
+---
+---
+title: "histogram without na"
+output:
+  word_document: {r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+##Loading Data
+
+setwd("D:/Private/Data_Sceince/Reproducible Search/Projects/repdata_data_activity")
+data<-read.csv("activity.csv")
+##Preprocessing of data
+data$date<-as.Date(data$date)
+##Histogram of total number of steps taken on each day
+no_of_steps<-aggregate(data$steps,by=list(data$date),FUN=sum,na.rm=TRUE) 
+```
+
+```{r}
+hist(no_of_steps$x, 
+      breaks=seq(from=0, to=25000, by=2500),
+      col="yellow", 
+      xlab="Total number of steps", 
+      ylim=c(0, 20), 
+      main="total number of steps taken each day")
+```
+
+```{r}
+##Mean and median number of steps 
+mean(no_of_steps$x)
+## [1] 9354.23
+median(no_of_steps$x)
+## [1] 10395
+```
+
+```{r}
+##Time Series Plot
+avg_steps<-aggregate(data$steps,by=list(data$interval),FUN=mean,na.rm=TRUE)
+
+colnames(avg_steps)<-c("interval","steps")
+
+
+library(ggplot2)
+ggplot(aes(x=interval,y=steps),data=avg_steps)+geom_line()
+```
+
+```{r}
+## Average 5 minute interval
+avg_steps[avg_steps$steps==max(avg_steps$steps),1]
+
+## [1] 835
+
+##Imputing NA
+
+sum(is.na(data$steps))
+## [1] 2304
+
+##Replace NA values with the mean of the steps
+
+data$steps[is.na(data$steps)]<-mean(data$steps,na.rm=TRUE)
+```
+
+```{r}
+##Histogram with Repaced NA values
+
+sum_steps<-aggregate(data$steps,by=list(data$date),FUN=sum,na.rm=TRUE) 
+
+hist(sum_steps$x, 
+      breaks=seq(from=0, to=25000, by=2500),
+      col="yellow", 
+      xlab="Total number of steps", 
+      ylim=c(0, 30), 
+      main=" steps taken each day\n(NA replaced by mean)")
+
+```
+
+```{r}
+##Mean and median number of steps taken each day after replacing NA values with mean
+
+mean(sum_steps$x)
+## [1] 10766.19
+median(sum_steps$x)
+## [1] 10766.19      
+
+##  date into weekdays
+
+data$days=tolower(weekdays(data$date))
+
+##days into weekend and weekdays
+
+data$day_type<-ifelse(data$days=="saturday"|data$days=="sunday","weekend","weekday")
+
+```
+
+```{r}
+## mean steps  on weekend or weekday 
+
+avg_steps<-aggregate(data$steps,by=list(data$interval,data$day_type),FUN=mean,na.rm=TRUE)
+
+colnames(avg_steps)<-c("interval","day_type","steps")
+
+## Create panel plot between average steps and interval
+
+ggplot(aes(x=interval,y=steps),data=avg_steps)+geom_line()+facet_wrap(~avg_steps$day_type)
+```
